@@ -18,42 +18,56 @@ ConVar g_cvRespawnHealth;
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype)
 {
-    if (!g_cvChaseModEnabled.BoolValue || !IsClientInGame(attacker))
+    if (!g_cvChaseModEnabled.BoolValue)
         return Plugin_Continue;
-    
+        
     int health = GetClientHealth(victim);
+    
+    if (!IsClientInGame(attacker) || attacker == victim)
+    {
+        if (damage >= health)
+        {
+            CS_RespawnPlayer(victim);
+            SetEntityHealth(victim, g_cvRespawnHealth.IntValue);
+            damage = 0.0;
+            
+            return Plugin_Continue;
+        }
+    }
+    
+    int victim_team = GetClientTeam(victim);
     int attacker_team = GetClientTeam(attacker);
     
-    if (attacker_team != CS_TEAM_CT)
-        return Plugin_Handled;
+    if (attacker_team != CS_TEAM_CT || victim_team != CS_TEAM_T || !(damagetype & DMG_SLASH))
+    {
+        damage = 0.0;
+        return Plugin_Continue;
+    }
     
     if (damage >= health)
     {
-        if (attacker == victim)
+        if (attacker != victim)
         {
-            PrintToChat(victim, "[SM] You died.");
-            return Plugin_Continue;
+            char victim_name[64] = { 0 };
+            char attacker_name[64] = { 0 };
+            
+            GetClientName(victim, victim_name, sizeof(victim_name));
+            GetClientName(attacker, attacker_name, sizeof(attacker_name));
+            PrintToChat(victim, "[SM] You have been killed by '%s'", attacker_name);
+            PrintToChat(attacker, "[SM] You killed '%s'", victim_name);
+            
+            CS_SwitchTeam(victim, attacker_team);
+            CS_SwitchTeam(attacker, victim_team);
+            
+            CS_RespawnPlayer(attacker);
         }
         
-        int victim_team = GetClientTeam(victim);
-        char victim_name[64] = { 0 };
-        char attacker_name[64] = { 0 };
-        
-        GetClientName(victim, victim_name, sizeof(victim_name));
-        GetClientName(attacker, attacker_name, sizeof(attacker_name));
-        PrintToChat(victim, "[SM] You have been killed by '%s'", attacker_name);
-        PrintToChat(attacker, "[SM] You killed '%s'", victim_name);
-        
-        CS_SwitchTeam(victim, attacker_team);
-        CS_SwitchTeam(attacker, victim_team);
-        
         CS_RespawnPlayer(victim);
-        CS_RespawnPlayer(attacker);
         
         SetEntityHealth(victim, g_cvRespawnHealth.IntValue);
         SetEntityHealth(attacker, g_cvRespawnHealth.IntValue);
         
-        return Plugin_Handled;
+        damage = 0.0;
     }
     
     return Plugin_Continue;
