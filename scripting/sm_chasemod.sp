@@ -29,7 +29,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
         {
             CS_RespawnPlayer(victim);
             SetEntityHealth(victim, g_cvRespawnHealth.IntValue);
-            damage = 0.0;
+            return Plugin_Handled;
         }
         
         return Plugin_Continue;
@@ -40,8 +40,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
     
     if (attacker_team != CS_TEAM_CT || victim_team != CS_TEAM_T || !(damagetype & DMG_SLASH))
     {
-        damage = 0.0;
-        return Plugin_Continue;
+        return Plugin_Handled;
     }
     
     if (damage >= health)
@@ -67,7 +66,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
         SetEntityHealth(victim, g_cvRespawnHealth.IntValue);
         SetEntityHealth(attacker, g_cvRespawnHealth.IntValue);
         
-        damage = 0.0;
+        return Plugin_Handled;
     }
     
     return Plugin_Continue;
