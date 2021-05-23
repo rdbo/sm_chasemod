@@ -14,6 +14,7 @@ public Plugin myinfo = {
 };
 
 ConVar g_cvChaseModEnabled;
+ConVar g_cvRespawnHealth;
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype)
 {
@@ -24,7 +25,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
     int attacker_team = GetClientTeam(attacker);
     
     if (attacker_team != CS_TEAM_CT)
-        return Plugin_Continue;
+        return Plugin_Handled;
     
     if (damage >= health)
     {
@@ -48,6 +49,11 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
         
         CS_RespawnPlayer(victim);
         CS_RespawnPlayer(attacker);
+        
+        SetEntityHealth(victim, g_cvRespawnHealth.IntValue);
+        SetEntityHealth(attacker, g_cvRespawnHealth.IntValue);
+        
+        return Plugin_Handled;
     }
     
     return Plugin_Continue;
@@ -56,6 +62,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 public void OnPluginStart()
 {
     g_cvChaseModEnabled = CreateConVar("sm_chasemod_enabled", "1", "Enable ChaseMod");
+    g_cvRespawnHealth = CreateConVar("sm_chasemod_health", "100", "Respawn Health");
     PrintToServer("[SM] ChaseMod Loaded");
 }
 
