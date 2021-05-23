@@ -30,9 +30,9 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
             CS_RespawnPlayer(victim);
             SetEntityHealth(victim, g_cvRespawnHealth.IntValue);
             damage = 0.0;
-            
-            return Plugin_Continue;
         }
+        
+        return Plugin_Continue;
     }
     
     int victim_team = GetClientTeam(victim);
