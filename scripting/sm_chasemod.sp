@@ -17,9 +17,13 @@ ConVar g_cvChaseModEnabled;
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype)
 {
-    int health = GetClientHealth(victim);
-    
     if (!g_cvChaseModEnabled.BoolValue || !IsClientInGame(attacker))
+        return Plugin_Continue;
+    
+    int health = GetClientHealth(victim);
+    int attacker_team = GetClientTeam(attacker);
+    
+    if (attacker_team != CS_TEAM_CT)
         return Plugin_Continue;
     
     if (damage >= health)
@@ -31,7 +35,6 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
         }
         
         int victim_team = GetClientTeam(victim);
-        int attacker_team = GetClientTeam(attacker);
         char victim_name[64] = { 0 };
         char attacker_name[64] = { 0 };
         
