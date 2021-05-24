@@ -139,5 +139,8 @@ void AddWeapon(int client, char[] classname)
         TeleportEntity(weapon, origin, angles, NULL_VECTOR);
         DispatchSpawn(weapon);
         SetEntPropEnt(weapon, Prop_Send, "m_hOwnerEntity", client);
+        EquipPlayerWeapon(client, weapon);
+        SetEntPropEnt(client, Prop_Data, "m_hActiveWeapon", weapon);
+        ChangeEdictState(client, FindDataMapInfo(client, "m_hActiveWeapon"));
     }
 }
