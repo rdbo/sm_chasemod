@@ -14,59 +14,35 @@ public Plugin myinfo = {
 };
 
 ConVar g_cvChaseModEnabled;
-ConVar g_cvRespawnHealth;
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype)
 {
-    if (!g_cvChaseModEnabled.BoolValue)
+    if (!g_cvChaseModEnabled.BoolValue || !IsClientInGame(attacker) || !(damagetype & (DMG_SLASH | DMG_BULLET)))
         return Plugin_Continue;
-        
-    int health = GetClientHealth(victim);
     
-    if (!IsClientInGame(attacker) || attacker == victim)
-    {
-        if (damage >= health)
-        {
-            CS_RespawnPlayer(victim);
-            SetEntityHealth(victim, g_cvRespawnHealth.IntValue);
-            return Plugin_Handled;
-        }
-        
-        return Plugin_Continue;
-    }
-    
-    int victim_team = GetClientTeam(victim);
     int attacker_team = GetClientTeam(attacker);
     
-    if (attacker_team != CS_TEAM_CT || victim_team != CS_TEAM_T || !(damagetype & DMG_SLASH))
-    {
+    if (!(damagetype & DMG_SLASH) || attacker_team != CS_TEAM_CT)
         return Plugin_Handled;
-    }
-    
-    if (damage >= health)
+        
+    return Plugin_Continue;
+}
+
+public Action HkRoundEnd(Handle event, const char[] name, bool dontBroadcast)
+{
+    for (int i = 1; i < MaxClients; ++i)
     {
-        if (attacker != victim)
+        if (IsClientInGame(i))
         {
-            char victim_name[64] = { 0 };
-            char attacker_name[64] = { 0 };
-            
-            GetClientName(victim, victim_name, sizeof(victim_name));
-            GetClientName(attacker, attacker_name, sizeof(attacker_name));
-            PrintToChat(victim, "[SM] You have been killed by '%s'", attacker_name);
-            PrintToChat(attacker, "[SM] You killed '%s'", victim_name);
-            
-            CS_SwitchTeam(victim, attacker_team);
-            CS_SwitchTeam(attacker, victim_team);
-            
-            CS_RespawnPlayer(attacker);
+            int team = GetClientTeam(i);
+            switch (team)
+            {
+            case CS_TEAM_CT:
+                CS_SwitchTeam(i, CS_TEAM_T);
+            case CS_TEAM_T:
+                CS_SwitchTeam(i, CS_TEAM_CT);
+            }
         }
-        
-        CS_RespawnPlayer(victim);
-        
-        SetEntityHealth(victim, g_cvRespawnHealth.IntValue);
-        SetEntityHealth(attacker, g_cvRespawnHealth.IntValue);
-        
-        return Plugin_Handled;
     }
     
     return Plugin_Continue;
@@ -75,7 +51,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 public void OnPluginStart()
 {
     g_cvChaseModEnabled = CreateConVar("sm_chasemod_enabled", "1", "Enable ChaseMod");
-    g_cvRespawnHealth = CreateConVar("sm_chasemod_health", "100", "Respawn Health");
+    HookEvent("round_end", HkRoundEnd, EventHookMode_PostNoCopy);
     PrintToServer("[SM] ChaseMod Loaded");
 }
 
