@@ -22,20 +22,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
     
     if (GetClientTeam(attacker) != CS_TEAM_CT)
         return Plugin_Handled;
-        
-    return Plugin_Continue;
-}
-
-public Action HkPlayerDeath(Event event, const char[] name, bool dontBroadcast)
-{
-    int attacker = GetClientOfUserId(event.GetInt("attacker"));
     
-    if (!g_cvChaseModEnabled.BoolValue || !IsClientInGame(attacker))
-        return Plugin_Continue;
-        
-    if (GetClientTeam(attacker) != CS_TEAM_CT)
-        return Plugin_Handled;
-        
     return Plugin_Continue;
 }
 
@@ -46,7 +33,7 @@ public Action HkPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     
     int client = GetClientOfUserId(event.GetInt("userid"));
     
-    if (!IsClientInGame(client))
+    if (!IsClientInGame(client) || !IsPlayerAlive(client))
         return Plugin_Continue;
         
     int team = GetClientTeam(client);
@@ -58,6 +45,13 @@ public Action HkPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
         AddWeapon(client, "weapon_knife");
     }
     
+    return Plugin_Continue;
+}
+
+public Action HkPlayerTeam(Event event, const char[] name, bool dontBroadcast)
+{
+    if (g_cvChaseModEnabled.BoolValue)
+        return Plugin_Handled;
     return Plugin_Continue;
 }
 
@@ -92,9 +86,9 @@ public void OnPluginStart()
 {
     PrintToServer("[SM] ChaseMod Loaded");
     g_cvChaseModEnabled = CreateConVar("sm_chasemod_enabled", "1", "Enable ChaseMod");
-    HookEvent("round_end", HkRoundEnd, EventHookMode_PostNoCopy);
-    HookEvent("player_spawn", HkPlayerSpawn, EventHookMode_PostNoCopy);
-    HookEvent("player_death", HkPlayerDeath, EventHookMode_Pre);
+    HookEvent("round_end", HkRoundEnd, EventHookMode_Pre);
+    HookEvent("player_spawn", HkPlayerSpawn, EventHookMode_Pre);
+    HookEvent("player_team", HkPlayerTeam, EventHookMode_Pre);
     PrintToServer("[SM] ChaseMod Loaded");
 }
 
@@ -112,9 +106,8 @@ void RemoveWeapons(int client)
 {
     int offset = FindDataMapInfo(client, "m_hMyWeapons");
     
-    for (int i = 0; i < MAX_WEAPONS; ++i)
+    for (int i = 0; i < MAX_WEAPONS; ++i, offset += 4)
     {
-        offset += 4;
         int weapon = GetEntDataEnt2(client, offset);
         if (weapon == -1)
             continue;
